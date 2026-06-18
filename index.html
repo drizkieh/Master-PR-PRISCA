@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Copyright By Dave</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f4f8;color:#1a1a1a;min-height:100vh}
+
+.topbar{background:#185FA5;color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.topbar h1{font-size:16px;font-weight:700;letter-spacing:.02em}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.sync-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px}
+.sync-btn:active{background:rgba(255,255,255,.25)}
+.status-dot{width:7px;height:7px;border-radius:50%;background:#4ade80;flex-shrink:0}
+.status-dot.loading{background:#facc15;animation:pulse 1s infinite}
+.status-dot.error{background:#f87171}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+.container{max-width:600px;margin:0 auto;padding:16px}
+
+/* Loading screen */
+.loading-screen{text-align:center;padding:4rem 1rem}
+.loading-screen .spinner{width:40px;height:40px;border:3px solid #ddd;border-top-color:#185FA5;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-screen h2{font-size:16px;color:#555;margin-bottom:6px}
+.loading-screen p{font-size:13px;color:#999}
+
+/* Error screen */
+.error-screen{background:#fff;border-radius:16px;padding:2rem;text-align:center;margin-top:1rem}
+.error-screen .ico{font-size:40px;margin-bottom:12px}
+.error-screen h2{font-size:16px;font-weight:600;color:#dc2626;margin-bottom:6px}
+.error-screen p{font-size:13px;color:#666;margin-bottom:16px;line-height:1.5}
+.error-screen .btn{display:inline-block;padding:10px 20px;background:#185FA5;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer}
+
+/* Stats bar */
+.stats-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.stat-item{background:#fff;border-radius:12px;padding:10px 8px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.stat-val{font-size:20px;font-weight:700;color:#185FA5}
+.stat-lbl{font-size:10px;color:#999;margin-top:2px;text-transform:uppercase;letter-spacing:.04em}
+
+/* Search */
+.search-card{background:#fff;border-radius:16px;padding:12px 14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.search-row{display:flex;gap:8px;align-items:center}
+.search-row input{flex:1;font-size:17px;border:none;outline:none;background:transparent;color:#1a1a1a;text-transform:uppercase;font-weight:500;padding:4px 0}
+.search-row input::placeholder{color:#bbb;font-weight:400;font-size:15px;text-transform:none}
+.search-row button{background:#185FA5;color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
+.search-row button:active{background:#0C447C}
+
+.suggestions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.sug-chip{font-size:13px;padding:5px 13px;border-radius:20px;background:#E6F1FB;color:#185FA5;cursor:pointer;font-weight:500;border:none;-webkit-tap-highlight-color:transparent}
+.sug-chip:active{background:#185FA5;color:#fff}
+
+/* Result */
+.result-card{background:#fff;border-radius:16px;padding:1.25rem;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.site-header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding-bottom:12px;border-bottom:1px solid #f0f0f0;margin-bottom:12px}
+.site-id{font-size:28px;font-weight:800;color:#185FA5}
+.meta-pills{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.meta-pill{font-size:11px;padding:4px 10px;border-radius:20px;background:#f0f4f8;color:#555;line-height:1.3}
+.meta-pill b{color:#1a1a1a;display:block;font-size:12px}
+.grand-total{text-align:right;flex-shrink:0}
+.grand-total .lbl{font-size:10px;color:#999;margin-bottom:2px;text-transform:uppercase;letter-spacing:.04em}
+.grand-total .val{font-size:18px;font-weight:800;color:#0F6E56}
+
+.job-count-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.job-count-row span{font-size:13px;color:#888}
+.job-count-row b{font-size:12px;padding:3px 12px;border-radius:20px;background:#E6F1FB;color:#185FA5}
+
+.job-item{border:1px solid #eee;border-radius:12px;margin-bottom:8px;overflow:hidden}
+.job-header{display:flex;align-items:center;gap:8px;padding:12px 13px;cursor:pointer;background:#fff;-webkit-tap-highlight-color:transparent;user-select:none}
+.job-header:active{background:#f9f9f9}
+.job-num{font-size:11px;font-weight:600;min-width:20px;height:20px;background:#E6F1FB;color:#185FA5;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.job-name{flex:1;font-size:14px;font-weight:500;color:#1a1a1a;line-height:1.35}
+.job-val{font-size:13px;font-weight:700;color:#0F6E56;white-space:nowrap}
+.chev{font-size:18px;color:#ccc;transition:transform .2s;flex-shrink:0;line-height:1}
+.chev.open{transform:rotate(180deg)}
+
+.job-detail{display:none;background:#fafafa;border-top:1px solid #f0f0f0;padding:12px 13px}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px}
+.detail-item{background:#fff;border-radius:8px;padding:8px 10px;border:1px solid #f0f0f0}
+.detail-item .d-lbl{font-size:10px;color:#999;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}
+.detail-item .d-val{font-size:13px;font-weight:600;color:#1a1a1a}
+.detail-item.total .d-val{color:#0F6E56;font-size:14px}
+
+.not-found{text-align:center;padding:3rem 1rem;background:#fff;border-radius:16px}
+.not-found .ico{font-size:48px;margin-bottom:12px}
+.not-found h3{font-size:16px;font-weight:600;color:#555;margin-bottom:4px}
+.not-found p{font-size:13px;color:#999}
+
+.last-sync{font-size:11px;color:#999;text-align:center;margin-bottom:12px}
+
+.screen{display:none}
+.screen.active{display:block}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>📡 Cek Site PR on PRISCA PT. Integra Solusi Mandiri</h1>
+  <div class="topbar-right">
+    <span class="status-dot" id="status-dot"></span>
+    <button class="sync-btn" onclick="loadData(true)">🔄 Sync</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Loading -->
+  <div id="screen-loading" class="screen active">
+    <div class="loading-screen">
+      <div class="spinner"></div>
+      <h2>Memuat data...</h2>
+      <p>Mengambil data dari Google Sheet</p>
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div id="screen-error" class="screen">
+    <div class="error-screen">
+      <div class="ico">⚠️</div>
+      <h2>Gagal Memuat Data</h2>
+      <p id="error-msg">Pastikan Google Sheet sudah diset "Anyone with the link can view" dan ada koneksi internet.</p>
+      <button class="btn" onclick="loadData(true)">🔄 Coba Lagi</button>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div id="screen-search" class="screen">
+    <div class="stats-bar">
+      <div class="stat-item"><div class="stat-val" id="s-sites">0</div><div class="stat-lbl">Total Site</div></div>
+      <div class="stat-item"><div class="stat-val" id="s-sow">0</div><div class="stat-lbl">Total SOW</div></div>
+      <div class="stat-item"><div class="stat-val" id="s-totalval" style="font-size:13px;padding-top:4px">-</div><div class="stat-lbl">Grand Total</div></div>
+    </div>
+
+    <div class="last-sync">🕐 Update: <span id="last-sync-time">-</span></div>
+
+    <div class="search-card">
+      <div class="search-row">
+        <input type="text" id="site-input" placeholder="Ketik Site ID, misal SKG164"
+          oninput="onSearchInput()" onkeydown="if(event.key==='Enter')doSearch()" autocomplete="off" autocorrect="off" spellcheck="false">
+        <button onclick="doSearch()">Cari</button>
+      </div>
+      <div id="suggestions" class="suggestions"></div>
+    </div>
+
+    <div id="search-result"></div>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+// CONFIG — Sheet ID sudah tertanam, tidak perlu ubah apapun
+// ============================================================
+var SHEET_ID = '1Dug3H64B-TF4DoLwaY9CKrSuh5FpTJAolIcM15y9sx4';
+var SHEET_NAME = ''; // kosong = sheet pertama
+
+// Mapping kolom — sesuai screenshot kolom di GSheet kamu
+var COL = {
+  site:  'SITE_ID',
+  pr:    'No PR',
+  proj:  'Project ID',
+  epp:   'No EPROC',
+  sow:   'SOW Pekerjaan',
+  qty:   'QUANTITY',
+  unit:  'Unit Vendor',
+  total: 'Total Vendor',
+  mitra: 'Mitra'
+};
+// ============================================================
+
+var siteIndex = {};
+var allRows = [];
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+}
+
+function setDot(state) {
+  var dot = document.getElementById('status-dot');
+  dot.className = 'status-dot' + (state === 'ok' ? '' : state === 'loading' ? ' loading' : ' error');
+}
+
+function loadData(forceRefresh) {
+  setDot('loading');
+  showScreen('screen-loading');
+
+  var sheetParam = SHEET_NAME ? '&sheet=' + encodeURIComponent(SHEET_NAME) : '';
+  var cacheBust = forceRefresh ? '&t=' + Date.now() : '';
+  var url = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:json' + sheetParam + cacheBust;
+
+  var script = document.createElement('script');
+  script.id = 'gsheet-script';
+
+  window._gsheetCallback = function(raw) {
+    try {
+      parseGViz(raw);
+    } catch(e) {
+      showError('Gagal parsing data: ' + e.message);
+    }
+    var old = document.getElementById('gsheet-script');
+    if(old) old.parentNode.removeChild(old);
+  };
+
+  // gviz endpoint support callback via URL param
+  var cbUrl = url + '&tqx=out:json;responseHandler:_gsheetCallback';
+  // override url
+  cbUrl = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:json;responseHandler:_gsheetCallback' + sheetParam + cacheBust;
+
+  script.onerror = function() {
+    showError('Tidak bisa mengakses Google Sheet. Pastikan sheet sudah di-share "Anyone with the link can view" dan ada koneksi internet.');
+    var old = document.getElementById('gsheet-script');
+    if(old) old.parentNode.removeChild(old);
+  };
+
+  script.src = cbUrl;
+  document.body.appendChild(script);
+
+  // timeout fallback
+  setTimeout(function() {
+    if(document.getElementById('screen-loading').classList.contains('active')) {
+      showError('Timeout. Cek koneksi internet dan coba lagi.');
+    }
+  }, 15000);
+}
+
+function parseGViz(data) {
+  var table = data.table;
+  if(!table || !table.cols || !table.rows) {
+    showError('Format data tidak dikenali. Pastikan Google Sheet tidak kosong.');
+    return;
+  }
+
+  // Build header map
+  var headers = table.cols.map(function(c){ return (c.label || c.id || '').trim(); });
+
+  // Find column indices — coba exact match dulu, lalu fuzzy
+  function findCol(target) {
+    // exact
+    var idx = headers.indexOf(target);
+    if(idx >= 0) return idx;
+    // case-insensitive
+    var lo = target.toLowerCase();
+    for(var i=0;i<headers.length;i++){
+      if(headers[i].toLowerCase() === lo) return i;
+    }
+    // contains
+    for(var i=0;i<headers.length;i++){
+      if(headers[i].toLowerCase().indexOf(lo) >= 0) return i;
+    }
+    return -1;
+  }
+
+  var idxSite  = findCol(COL.site);
+  var idxPr    = findCol(COL.pr);
+  var idxProj  = findCol(COL.proj);
+  var idxEpp   = findCol(COL.epp);
+  var idxMitra = findCol(COL.mitra);
+  var idxSow   = findCol(COL.sow);
+  var idxQty   = findCol(COL.qty);
+  var idxUnit  = findCol(COL.unit);
+  var idxTotal = findCol(COL.total);
+
+  if(idxSite < 0) {
+    showError('Kolom "' + COL.site + '" tidak ditemukan di sheet. Header yang tersedia: ' + headers.join(', '));
+    return;
+  }
+
+  function cellVal(row, idx) {
+    if(idx < 0 || !row.c || !row.c[idx]) return '';
+    var c = row.c[idx];
+    if(c === null) return '';
+    if(c.v === null || c.v === undefined) return '';
+    // formatted value preferred for display
+    return c.f !== undefined && c.f !== null ? c.f : c.v;
+  }
+
+  function cellNum(row, idx) {
+    if(idx < 0 || !row.c || !row.c[idx]) return 0;
+    var c = row.c[idx];
+    if(!c || c.v === null || c.v === undefined) return 0;
+    var n = parseFloat(String(c.v).replace(/[^0-9.\-]/g,''));
+    return isNaN(n) ? 0 : n;
+  }
+
+  allRows = [];
+  siteIndex = {};
+
+  table.rows.forEach(function(row) {
+    var sid = String(cellVal(row, idxSite) || '').trim().toUpperCase();
+    if(!sid || sid === COL.site.toUpperCase()) return; // skip header row if duplicated
+
+    var r = {
+      site:  sid,
+      pr:    cellVal(row, idxPr),
+      proj:  cellVal(row, idxProj),
+      epp:   cellVal(row, idxEpp),
+      mitra: cellVal(row, idxMitra),
+      sow:   cellVal(row, idxSow),
+      qty:   cellVal(row, idxQty),
+      unit:  cellVal(row, idxUnit),
+      total: cellNum(row, idxTotal),
+      totalRaw: cellVal(row, idxTotal)
+    };
+
+    allRows.push(r);
+    if(!siteIndex[sid]) siteIndex[sid] = [];
+    siteIndex[sid].push(r);
+  });
+
+  // Update stats
+  var siteCount = Object.keys(siteIndex).length;
+  var grandTotal = allRows.reduce(function(a,r){ return a + r.total; }, 0);
+  document.getElementById('s-sites').textContent = siteCount.toLocaleString('id-ID');
+  document.getElementById('s-sow').textContent = allRows.length.toLocaleString('id-ID');
+  document.getElementById('s-totalval').textContent = fmtRpShort(grandTotal);
+
+  var now = new Date();
+  document.getElementById('last-sync-time').textContent =
+    now.toLocaleDateString('id-ID') + ' ' + now.toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit'});
+
+  setDot('ok');
+  showScreen('screen-search');
+  document.getElementById('search-result').innerHTML = '';
+  document.getElementById('site-input').value = '';
+  document.getElementById('suggestions').innerHTML = '';
+}
+
+function showError(msg) {
+  document.getElementById('error-msg').textContent = msg;
+  setDot('error');
+  showScreen('screen-error');
+}
+
+function fmtRp(v) {
+  var n = typeof v === 'number' ? v : parseFloat(String(v).replace(/[^0-9.\-]/g,''));
+  if(isNaN(n) || n === 0) return '-';
+  return 'Rp ' + Math.round(n).toLocaleString('id-ID');
+}
+
+function fmtRpShort(n) {
+  if(n >= 1e9) return 'Rp ' + (n/1e9).toFixed(1) + 'M';
+  if(n >= 1e6) return 'Rp ' + (n/1e6).toFixed(1) + 'jt';
+  if(n >= 1e3) return 'Rp ' + (n/1e3).toFixed(0) + 'rb';
+  return 'Rp ' + Math.round(n).toLocaleString('id-ID');
+}
+
+function fmtNum(v) {
+  var n = parseFloat(String(v).replace(/[^0-9.\-]/g,''));
+  if(isNaN(n)) return String(v) || '-';
+  return n.toLocaleString('id-ID');
+}
+
+function onSearchInput() {
+  var q = document.getElementById('site-input').value.trim().toUpperCase();
+  var box = document.getElementById('suggestions');
+  if(q.length < 1) { box.innerHTML = ''; return; }
+  var matches = Object.keys(siteIndex).filter(function(s){ return s.indexOf(q) >= 0; }).sort().slice(0, 12);
+  box.innerHTML = matches.map(function(s){
+    return '<button class="sug-chip" onclick="selectSite(\'' + s + '\')">' + s + '</button>';
+  }).join('');
+}
+
+function selectSite(s) {
+  document.getElementById('site-input').value = s;
+  document.getElementById('suggestions').innerHTML = '';
+  doSearch();
+}
+
+function doSearch() {
+  var q = document.getElementById('site-input').value.trim().toUpperCase();
+  if(!q) return;
+  document.getElementById('suggestions').innerHTML = '';
+  var data = siteIndex[q];
+  var el = document.getElementById('search-result');
+
+  if(!data || data.length === 0) {
+    // coba partial match
+    var partials = Object.keys(siteIndex).filter(function(s){ return s.indexOf(q) >= 0; });
+    if(partials.length === 1) {
+      selectSite(partials[0]);
+      return;
+    }
+    el.innerHTML = '<div class="not-found"><div class="ico">🔍</div><h3>Site "' + q + '" tidak ditemukan</h3><p>Cek kembali Site ID yang kamu ketik</p></div>';
+    return;
+  }
+  renderResult(q, data, el);
+}
+
+function renderResult(siteId, data, container) {
+  var first = data[0];
+  var grandTotal = data.reduce(function(a,r){ return a + r.total; }, 0);
+  var eppHtml   = first.epp   ? '<span class="meta-pill"><span style="font-size:10px;color:#999">No Epproc</span><b>' + first.epp + '</b></span>' : '';
+  var mitraHtml = first.mitra ? '<span class="meta-pill"><span style="font-size:10px;color:#999">Mitra</span><b>' + first.mitra + '</b></span>' : '';
+
+  var jobsHtml = '';
+  data.forEach(function(r, i) {
+    jobsHtml += '<div class="job-item">' +
+      '<div class="job-header" onclick="toggleJob(this)">' +
+        '<span class="job-num">' + (i+1) + '</span>' +
+        '<span class="job-name">' + (r.sow || 'Pekerjaan ' + (i+1)) + '</span>' +
+        '<span class="job-val">' + fmtRp(r.total) + '</span>' +
+        '<span class="chev">&#8964;</span>' +
+      '</div>' +
+      '<div class="job-detail">' +
+        '<div class="detail-grid">' +
+          '<div class="detail-item"><div class="d-lbl">Qty</div><div class="d-val">' + (r.qty || '-') + '</div></div>' +
+          '<div class="detail-item"><div class="d-lbl">Unit Price</div><div class="d-val">' + fmtRp(parseFloat(String(r.unit).replace(/[^0-9.\-]/g,''))) + '</div></div>' +
+          '<div class="detail-item total"><div class="d-lbl">Total</div><div class="d-val">' + fmtRp(r.total) + '</div></div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  });
+
+  container.innerHTML =
+    '<div class="result-card">' +
+      '<div class="site-header">' +
+        '<div>' +
+          '<div class="site-id">' + siteId + '</div>' +
+          '<div class="meta-pills">' +
+            '<span class="meta-pill"><span style="font-size:10px;color:#999">No PR</span><b>' + (first.pr || '-') + '</b></span>' +
+            '<span class="meta-pill"><span style="font-size:10px;color:#999">Project ID</span><b>' + (first.proj || '-') + '</b></span>' +
+            eppHtml +
+            mitraHtml +
+          '</div>' +
+        '</div>' +
+        '<div class="grand-total"><div class="lbl">Grand Total</div><div class="val">' + fmtRp(grandTotal) + '</div></div>' +
+      '</div>' +
+      '<div class="job-count-row"><span>Daftar pekerjaan</span><b>' + data.length + ' item</b></div>' +
+      jobsHtml +
+    '</div>';
+}
+
+function toggleJob(header) {
+  var detail = header.nextElementSibling;
+  var chev = header.querySelector('.chev');
+  var isOpen = detail.style.display === 'block';
+  detail.style.display = isOpen ? 'none' : 'block';
+  chev.classList.toggle('open', !isOpen);
+}
+
+// Auto-load on open
+loadData(false);
+</script>
+</body>
+</html>
